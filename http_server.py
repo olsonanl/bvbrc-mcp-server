@@ -14,6 +14,7 @@ from token_provider import TokenProvider
 from starlette.responses import JSONResponse, HTMLResponse, RedirectResponse
 import json
 import sys
+import os
 from auth import (
     openid_configuration, 
     oauth2_register, 
@@ -33,7 +34,7 @@ service_api_url = config.get("service_api_url", "https://p3.theseed.org/services
 similar_genome_finder_api_url = config.get("similar_genome_finder_api_url", service_api_url)
 authentication_url = config.get("authentication_url", "https://user.patricbrc.org/authenticate")
 openid_config_url = config.get("openid_config_url", "https://dev-7.bv-brc.org")
-port = config.get("port", 12010)
+port = int(os.environ.get("PORT", config.get("port", 12010)))
 mcp_url = config.get("mcp_url", "127.0.0.1")
 
 # Initialize token provider for HTTP mode
