@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+"""
+Generate mcp_config.json from mcp_example.json template with correct paths.
+Optionally authenticate and set KB_AUTH_TOKEN.
+"""
+
+import json
+import os
+import requests
+from pathlib import Path
+from getpass import getpass
+
+
+def load_config(config_path: str = "config.json") -> dict:
+    """Load configuration from config.json"""
+    config_file = Path(config_path)
+    if not config_file.exists():
+        return {}
+    
+    with open(config_file, 'r') as f:
+        return json.load(f)
+
+
+def authenticate(username: str, password: str, authentication_url: str) -> str:
+    """
+    Authenticate with BV-BRC API using the same method as oauth2_login.
+    
+    Args:
+        username: BV-BRC username
+        password: BV-BRC password
+        authentication_url: Authentication endpoint URL
+        
+    Returns:
+        Authentication token string
+        
+    Raises:
+        SystemExit: If authentication fails
+    """
+    print(f"Authenticating with BV-BRC...")
+    print(f"  Endpoint: {authentication_url}")
+    print(f"  Username: {username}")
+    
+    try:
+        response = requests.post(
+            authentication_url,
+            headers={
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            data={
+                'username': username,
+                'password': password
+            },
+            timeout=30
+        )
+        
+        # Check if authentication was successful
+        if response.status_code != 200:
+            print(f"Error: Authentication failed (HTTP {response.status_code})")
+            print(f"Response: {response.text}")
+            return None
+        
+        # Parse the response to get the token
+        # The token should be in the response body
+        user_token = response.text.strip()
+        
+        if not user_token:
+            print("Error: No token received from authentication endpoint")
+            return None
+        
+        print(f"✓ Authentication successful!")
+        print(f"  Token (first 20 chars): {user_token[:20]}...")
+        
+        return user_token
+        
+    except requests.RequestException as e:
+        print(f"Error: Authentication request failed: {e}")
+        return None
+    except Exception as e:
+        print(f"Error: Authentication failed: {e}")
+        return None
+
+
+def generate_mcp_config():
+    # Get the directory where this script is located
+    script_dir = Path(__file__).parent.absolute()
+    
+    # Define paths
+    template_path = script_dir / "mcp_example.json"
+    output_path = script_dir / "mcp_config.json"
+    mcp_env_path = script_dir / "mcp_env"
+    stdio_server_path = script_dir / "stdio_server.py"
+    config_path = script_dir / "config.json"
+    
+    # Check if template exists
+    if not template_path.exists():
+        print(f"Error: Template file not found: {template_path}")
+        return 1
+    
+    # Check if mcp_env exists
+    if not mcp_env_path.exists():
+        print(f"Warning: mcp_env directory not found: {mcp_env_path}")
+        print("You may need to run install.sh first.")
+    
+    # Check if stdio_server.py exists
+    if not stdio_server_path.exists():
+        print(f"Error: stdio_server.py not found: {stdio_server_path}")
+        return 1
+    
+    # Read the template
+    with open(template_path, 'r') as f:
+        config = json.load(f)
+    
+    # Replace placeholders with actual paths
+    python_path = mcp_env_path / "bin" / "python3"
+    
+    # Update the config
+    config["mcpServers"]["bvbrc-mcp"]["command"] = str(python_path)
+    config["mcpServers"]["bvbrc-mcp"]["args"] = [str(stdio_server_path)]
+    
+    # Optionally authenticate and set KB_AUTH_TOKEN
+    print("\n" + "=" * 50)
+    print("Authentication (optional)")
+    print("=" * 50)
+    auth_choice = input("Would you like to authenticate and set KB_AUTH_TOKEN? (y/n): ").strip().lower()
+    
+    if auth_choice in ['y', 'yes']:
+        # Load config to get authentication URL
+        app_config = load_config(str(config_path))
+        authentication_url = app_config.get("authentication_url", "https://user.patricbrc.org/authenticate")
+        
+        # Prompt for username and password
+        username = input("Username: ").strip()
+        if not username:
+            print("Warning: No username provided, skipping authentication")
+        else:
+            password = getpass("Password: ")
+            if not password:
+                print("Warning: No password provided, skipping authentication")
+            else:
+                # Authenticate
+                token = authenticate(username, password, authentication_url)
+                if token:
+                    # Set KB_AUTH_TOKEN in the config
+                    if "env" not in config["mcpServers"]["bvbrc-mcp"]:
+                        config["mcpServers"]["bvbrc-mcp"]["env"] = {}
+                    config["mcpServers"]["bvbrc-mcp"]["env"]["KB_AUTH_TOKEN"] = token
+                    print(f"✓ KB_AUTH_TOKEN set in config")
+                else:
+                    print("Warning: Authentication failed, KB_AUTH_TOKEN not set")
+    
+    # Write the output
+    with open(output_path, 'w') as f:
+        json.dump(config, f, indent=2)
+    
+    print("\n" + "=" * 50)
+    print(f"Successfully generated {output_path}")
+    print(f"  Python: {python_path}")
+    print(f"  Server: {stdio_server_path}")
+    if config["mcpServers"]["bvbrc-mcp"].get("env", {}).get("KB_AUTH_TOKEN"):
+        print(f"  KB_AUTH_TOKEN: Set ✓")
+    else:
+        print(f"  KB_AUTH_TOKEN: Not set")
+    
+    return 0
+
+
+if __name__ == "__main__":
+    exit(generate_mcp_config())
+
