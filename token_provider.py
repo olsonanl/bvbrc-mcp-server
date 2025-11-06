@@ -108,20 +108,3 @@ class TokenProvider:
             print(f"Warning: Could not load token from config: {e}", file=sys.stderr)
             self._config_token = None
     
-    def _load_mcp_config_token(self):
-        """Load token from mcp_config.json file"""
-        try:
-            with open(self.mcp_config_path, "r") as f:
-                mcp_config = json.load(f)
-                # Navigate to mcpServers.bvbrc-mcp.env.KB_AUTH_TOKEN
-                mcp_servers = mcp_config.get("mcpServers", {})
-                bvbrc_config = mcp_servers.get("bvbrc-mcp", {})
-                env = bvbrc_config.get("env", {})
-                self._mcp_config_token = env.get("KB_AUTH_TOKEN")
-        except FileNotFoundError:
-            # mcp_config.json not found is not an error, just return None
-            self._mcp_config_token = None
-        except Exception as e:
-            print(f"Warning: Could not load token from mcp_config.json: {e}", file=sys.stderr)
-            self._mcp_config_token = None
-
