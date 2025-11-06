@@ -56,10 +56,11 @@ Generate mcp config file:
 python3 generate_mcp_config.py
 ```
 Creates mcp_config.json
+
 Paste its contents into your chatbots mcp config file
 
 ## Remote server development
-3. Configure the server (for remote servers):
+Configure the server (for remote servers):
 Create `config.json` to set:
 - API URLs (workspace, service, data)
 - Server host and port
