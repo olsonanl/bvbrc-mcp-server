@@ -59,7 +59,7 @@ Creates mcp_config.json
 
 Paste its contents into your chatbots mcp config file
 
-## For instructions on the MCP configuration in Claude and ChatGPT
+## MCP configuration in Claude and ChatGPT
 
 For instructions on locating claude's MCP configuration file, see [this guide](https://support.claude.com/en/articles/11175166-getting-started-with-custom-connectors-using-remote-mcp).
 
