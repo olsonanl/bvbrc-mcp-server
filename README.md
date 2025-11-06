@@ -42,7 +42,8 @@ A unified Model Context Protocol (MCP) server:
 - `get_genome_group_ids`: Get genome IDs from a group
 - `get_feature_group_ids`: Get feature IDs from a group
 
-## Connecting Your MCP Server to ChatGPT
+<details>
+<summary><h2>Connecting Your MCP Server to ChatGPT</h2></summary>
 
 ### Step 1: Enable Developer Mode
 
@@ -76,10 +77,7 @@ A unified Model Context Protocol (MCP) server:
   - You should see **BV-BRC MCP** as an option under **Canvas**
 4. Select **BV-BRC MCP**
 
-
-### Note
-
-When writing a query, mention the action you are testing.
+</details>
 
 ## Installation
 
