@@ -11,6 +11,8 @@ from typing import Any, Dict, List, Tuple
 from bvbrc_solr_api import create_client, query
 from bvbrc_solr_api.core.solr_http_client import select as solr_select
 CURSOR_BATCH_SIZE = 1000
+# Timeout for Solr queries in seconds (default is 60, increase for large queries)
+SOLR_QUERY_TIMEOUT = 300.0  # 5 minutes
 
 
 
@@ -61,6 +63,13 @@ def query_direct(core: str, filter_str: str = "", options: Dict[str, Any] = None
     client = create_bvbrc_client(base_url, headers)
     options = options or {}
     
+    # Build context_overrides with timeout and any provided base_url/headers
+    context_overrides = {"timeout": SOLR_QUERY_TIMEOUT}
+    if base_url:
+        context_overrides["base_url"] = base_url
+    if headers:
+        context_overrides["headers"] = headers
+    
     # Prepare a configured CursorPager via the client (ensures correct unique_key/sort per collection)
     pager = getattr(client, core).stream_all_solr(
         rows=CURSOR_BATCH_SIZE,
@@ -68,7 +77,7 @@ def query_direct(core: str, filter_str: str = "", options: Dict[str, Any] = None
         fields=options.get("select"),
         q_expr=filter_str if filter_str else "*:*",
         start_cursor=cursorId or "*",
-        context_overrides={"base_url": base_url, "headers": headers} if base_url or headers else None
+        context_overrides=context_overrides
     )
 
     # Helper to execute a single Solr select call based on the pager's current state

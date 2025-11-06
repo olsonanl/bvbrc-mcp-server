@@ -1,5 +1,6 @@
 import json
 import secrets
+import sys
 import time
 import requests
 import hashlib
@@ -48,9 +49,12 @@ class BvbrcOAuthProvider(AuthProvider):
     async def verify_token(self, token: str) -> AccessToken | None:  # type: ignore[override]
         """
         Verify token by checking it's one we issued through OAuth flow
-        and validating it's still valid against the authentication endpoint.
+        or a valid PATRIC token.
         """
+        print(f"[TOKEN VERIFICATION] Verifying token: {token}", file=sys.stderr)
+        
         if not token or not isinstance(token, str):
+            print(f"[TOKEN VERIFICATION] Token is invalid or empty", file=sys.stderr)
             return None
         
         # Check if token is one we issued (stored when tokens are exchanged)
@@ -63,11 +67,56 @@ class BvbrcOAuthProvider(AuthProvider):
                         "username": auth_code_data.get("username"),
                         "issued_at": auth_code_data.get("expires_at", time.time()) - 600,
                     }
+                    print(f"[TOKEN VERIFICATION] Token found in legacy storage. Token: {token}, Username: {token_info.get('username')}", file=sys.stderr)
                     break
+        else:
+            print(f"[TOKEN VERIFICATION] Token found in issued_tokens. Token: {token}, Username: {token_info.get('username')}", file=sys.stderr)
+        
+        # If not found in OAuth tokens, check if it's a PATRIC token
+        if not token_info:
+            # PATRIC tokens have format: un=username|tokenid=...|expiry=...|...
+            if "un=" in token and "|tokenid=" in token:
+                print(f"[TOKEN VERIFICATION] Detected PATRIC token format", file=sys.stderr)
+                try:
+                    # Parse PATRIC token
+                    parts = token.split("|")
+                    username = None
+                    expiry = None
+                    
+                    for part in parts:
+                        if part.startswith("un="):
+                            username = part[3:]  # Remove "un=" prefix
+                        elif part.startswith("expiry="):
+                            expiry_str = part[7:]  # Remove "expiry=" prefix
+                            try:
+                                expiry = int(expiry_str)
+                            except ValueError:
+                                print(f"[TOKEN VERIFICATION] Invalid expiry format in PATRIC token", file=sys.stderr)
+                                return None
+                    
+                    if not username:
+                        print(f"[TOKEN VERIFICATION] Could not extract username from PATRIC token", file=sys.stderr)
+                        return None
+                    
+                    # Check if token is expired
+                    if expiry:
+                        current_time = int(time.time())
+                        if expiry < current_time:
+                            print(f"[TOKEN VERIFICATION] PATRIC token expired. Expiry: {expiry}, Current: {current_time}", file=sys.stderr)
+                            return None
+                    
+                    token_info = {
+                        "username": username,
+                        "issued_at": time.time() - 3600,  # Assume issued 1 hour ago
+                    }
+                    print(f"[TOKEN VERIFICATION] PATRIC token parsed successfully. Username: {username}, Expiry: {expiry}", file=sys.stderr)
+                except Exception as e:
+                    print(f"[TOKEN VERIFICATION] Exception parsing PATRIC token: {e}", file=sys.stderr)
+                    return None
         
         if not token_info:
-            # Token not found in our issued tokens - reject it
-            # Only accept tokens that were issued through our OAuth flow
+            # Token not found in our issued tokens and not a valid PATRIC token
+            print(f"[TOKEN VERIFICATION] Token not found in issued tokens and not a valid PATRIC token. Token: {token}", file=sys.stderr)
             return None
         
         # Validate token is still valid by checking against authentication endpoint
@@ -84,9 +133,12 @@ class BvbrcOAuthProvider(AuthProvider):
             # If you need full validation, make a test API call to a BV-BRC endpoint that uses the token
             
         except Exception:
+            print(f"[TOKEN VERIFICATION] Exception during validation. Token: {token}", file=sys.stderr)
             return None
         
         # Return an AccessToken as defined by mcp.server.auth.provider.AccessToken
+        username = token_info.get("username", "unknown")
+        print(f"[TOKEN VERIFICATION] Token verified successfully. Token: {token}, Username: {username}", file=sys.stderr)
         return AccessToken(
             token=token,
             client_id="bvbrc-public-client",

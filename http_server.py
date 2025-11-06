@@ -54,7 +54,7 @@ mcp = FastMCP("BVBRC Consolidated MCP Server", auth=oauth)
 
 # Register all tools from the three modules
 print("Registering data tools...", file=sys.stderr)
-register_data_tools(mcp, base_url)
+register_data_tools(mcp, base_url, token_provider)
 
 print("Registering service tools...", file=sys.stderr)
 register_service_tools(mcp, service_api, similar_genome_finder_api, token_provider)
