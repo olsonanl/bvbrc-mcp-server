@@ -114,9 +114,9 @@ A Model Context Protocol (MCP) server for the Bacterial-Viral Bioinformatics res
    ```
 
 2. Activate the environment:
-  ```bash
-  source mcp_env/bin/activate
-  ```
+   ```bash
+   source mcp_env/bin/activate
+   ```
 
 3. Install the MCP Builder CLI:
    ```bash
