@@ -42,6 +42,7 @@ def register_data_tools(mcp: FastMCP, base_url: str):
         Returns:
             Formatted query results
         """
+        print(f"Querying collection: {collection} with filter: {filter_str}")
         options = {}
         if select:
             options["select"] = select.split(",")
@@ -50,6 +51,7 @@ def register_data_tools(mcp: FastMCP, base_url: str):
 
         try:
             result, count = query_direct(collection, filter_str, options, _base_url)
+            print(f"Query returned {len(result)} of {count} results.")
             return json.dumps({
                 "count": count,
                 "results": result
