@@ -6,7 +6,7 @@ All tools are registered with the FastMCP server instance.
 """
 
 from fastmcp import FastMCP
-from json_rpc import JsonRpcCaller
+from common.json_rpc import JsonRpcCaller
 from functions.service_functions import (
     enumerate_apps, start_date_app, start_genome_annotation_app, query_tasks,
     start_genome_assembly_app, start_comprehensive_genome_analysis_app, start_blast_app,

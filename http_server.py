@@ -6,16 +6,16 @@ This server consolidates the data, service, and workspace MCP servers into a sin
 """
 
 from fastmcp import FastMCP
-from json_rpc import JsonRpcCaller
+from common.json_rpc import JsonRpcCaller
 from tools.data_tools import register_data_tools
 from tools.service_tools import register_service_tools
 from tools.workspace_tools import register_workspace_tools
-from token_provider import TokenProvider
+from common.token_provider import TokenProvider
 from starlette.responses import JSONResponse, HTMLResponse, RedirectResponse
 import json
 import sys
 import os
-from auth import BvbrcOAuthProvider
+from common.auth import BvbrcOAuthProvider
 
 # Load configuration
 with open("config/config.json", "r") as f:

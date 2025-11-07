@@ -7,11 +7,11 @@ running in STDIO mode for use with MCP clients like Claude Desktop.
 """
 
 from fastmcp import FastMCP
-from json_rpc import JsonRpcCaller
+from common.json_rpc import JsonRpcCaller
 from tools.data_tools import register_data_tools
 from tools.service_tools import register_service_tools
 from tools.workspace_tools import register_workspace_tools
-from token_provider import TokenProvider
+from common.token_provider import TokenProvider
 import json
 import sys
 import os

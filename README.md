@@ -115,7 +115,7 @@ A Model Context Protocol (MCP) server for the Bacterial-Viral Bioinformatics res
 
 2. Generate the MCP configuration file (if you haven't already):
    ```bash
-   python3 generate_mcp_config.py
+   python3 common/generate_mcp_config.py
    ```
 
 3. Pack the extension:
@@ -151,7 +151,7 @@ sh install.sh
 
 Generate mcp config file:
 ```bash
-python3 generate_mcp_config.py
+python3 common/generate_mcp_config.py
 ```
 Creates mcp_config.json
 
@@ -225,13 +225,8 @@ See installation section
 bvbrc-mcp-server/
 ├── __init__.py                      # Package initialization
 ├── __main__.py                      # Entry point for module execution
-├── auth.py                          # OAuth2 authentication endpoints (HTTP only)
-├── config.json                      # Configuration file
-├── example_config.json              # Example configuration template
-├── generate_mcp_config.py           # Script to generate MCP config file
 ├── http_server.py                    # HTTP server (for web clients, ChatGPT)
 ├── install.sh                       # Installation script
-├── json_rpc.py                      # JSON-RPC client for API calls
 ├── mcp_config.json                  # Generated MCP configuration
 ├── mcp_example.json                 # Example MCP configuration
 ├── mcp.pm2.config.js                 # PM2 process manager configuration
@@ -239,7 +234,15 @@ bvbrc-mcp-server/
 ├── requirements.txt                 # Python dependencies
 ├── start_server.sh                  # Server startup script
 ├── stdio_server.py                  # STDIO server (for Claude Desktop, etc.)
-├── token_provider.py                # Unified authentication token handling
+├── common/                          # Common utility modules
+│   ├── __init__.py
+│   ├── auth.py                      # OAuth2 authentication endpoints (HTTP only)
+│   ├── generate_mcp_config.py       # Script to generate MCP config file
+│   ├── json_rpc.py                  # JSON-RPC client for API calls
+│   └── token_provider.py            # Unified authentication token handling
+├── config/                          # Configuration files
+│   ├── config.json                  # Main configuration file
+│   └── ...
 ├── bvbrc-python-api/                # BV-BRC Python API dependency
 │   ├── bvbrc_solr_api/              # Solr API implementation
 │   ├── pyproject.toml
