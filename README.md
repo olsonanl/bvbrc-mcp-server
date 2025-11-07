@@ -46,7 +46,7 @@ A Model Context Protocol (MCP) server for the Bacterial-Viral Bioinformatics res
 </details>
 
 <details>
-<summary><h2>Connecting the BV-BRC MCP Server to ChatGPT</h2></summary>
+<summary><h2>Connecting the Remote BV-BRC MCP Server to ChatGPT</h2></summary>
 
 ### Step 1: Enable Developer Mode
 
@@ -83,7 +83,7 @@ A Model Context Protocol (MCP) server for the Bacterial-Viral Bioinformatics res
 </details>
 
 <details>
-<summary><h2>Connecting the BV-BRC MCP Server to Claude</h2></summary>
+<summary><h2>Connecting the Remote BV-BRC MCP Server to Claude</h2></summary>
 
 1. Click **account** in bottom left and go to **settings**
 
