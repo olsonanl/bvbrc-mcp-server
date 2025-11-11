@@ -39,12 +39,14 @@ workspace_api = JsonRpcCaller(workspace_api_url)
 service_api = JsonRpcCaller(service_api_url)
 similar_genome_finder_api = JsonRpcCaller(similar_genome_finder_api_url)
 
-# Publicly reachable base URL for discovery and metadata
-public_base_url = os.environ.get("PUBLIC_BASE_URL") or openid_config_url
+# Publicly reachable server URL for discovery and metadata
+# Use PUBLIC_BASE_URL env var if set, otherwise construct from openid_config_url
+# The server URL is where this MCP server is accessible, not the data API URL
+server_url = os.environ.get("PUBLIC_BASE_URL") or openid_config_url
 
-# Initialize OAuth provider (class-based) with advertised base_url
+# Initialize OAuth provider (class-based) with server URL (not data API base_url)
 oauth = BvbrcOAuthProvider(
-    base_url=public_base_url,
+    base_url=server_url,  # This is the MCP server URL, not the data API URL
     openid_config_url=openid_config_url,
     authentication_url=authentication_url,
 )
@@ -77,13 +79,17 @@ async def openid_configuration_route(request) -> JSONResponse:
     return await oauth.openid_configuration(request)
 
 # OAuth Authorization Server metadata (well-known)
-@mcp.custom_route("/mcp/.well-known/oauth-authorization-server", methods=["GET"])
+# Per RFC 8414 section 3, if issuer is "https://example.com/issuer1",
+# metadata is at "https://example.com/.well-known/oauth-authorization-server/issuer1"
+# So for issuer {server_url}/mcp, metadata should be at /.well-known/oauth-authorization-server/mcp
+@mcp.custom_route("/.well-known/oauth-authorization-server/mcp", methods=["GET"])
 async def oauth_as_metadata(request) -> JSONResponse:
+    issuer = f"{server_url}/mcp"
     return JSONResponse({
-        "issuer": public_base_url,
-        "authorization_endpoint": f"{public_base_url}/mcp/oauth2/authorize",
-        "token_endpoint": f"{public_base_url}/mcp/oauth2/token",
-        "registration_endpoint": f"{public_base_url}/mcp/oauth2/register",
+        "issuer": issuer,
+        "authorization_endpoint": f"{issuer}/oauth2/authorize",
+        "token_endpoint": f"{issuer}/oauth2/token",
+        "registration_endpoint": f"{issuer}/oauth2/register",
         "response_types_supported": ["code"],
         "grant_types_supported": ["authorization_code"],
         "token_endpoint_auth_methods_supported": ["none", "client_secret_post"],
