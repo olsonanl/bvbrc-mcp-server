@@ -14,6 +14,10 @@ from starlette.requests import Request
 from starlette.routing import Route
 from pydantic import AnyHttpUrl
 from mcp.server.auth.routes import create_protected_resource_routes
+from mcp.server.auth.handlers.metadata import ProtectedResourceMetadataHandler
+from mcp.shared.auth import ProtectedResourceMetadata
+from mcp.server.auth.routes import cors_middleware
+
 try:
     # Prefer FastMCP auth base classes when available
     from fastmcp.server.auth.auth import AuthProvider, AccessToken
@@ -172,18 +176,42 @@ class BvbrcOAuthProvider(AuthProvider):
             return routes
         # Build full resource URL and advertise protected resource metadata (RFC 9728)
         resource_url = f"{str(self.base_url).rstrip('/')}/{mcp_path.lstrip('/')}"
+        # Authorization server URL is {base_url}/mcp since all OAuth endpoints are under /mcp
+        authorization_server_url = AnyHttpUrl(resource_url)
         try:
+            # Create PRM route for the specific resource path (/.well-known/oauth-protected-resource/mcp)
             routes.extend(
                 create_protected_resource_routes(
                     resource_url=AnyHttpUrl(resource_url),
-                    authorization_servers=[AnyHttpUrl(self.openid_config_url)],
+                    authorization_servers=[authorization_server_url],
                     scopes_supported=self.required_scopes,
                     resource_name="BV-BRC MCP",
                     resource_documentation=None,
                 )
             )
-        except Exception:
+            
+            # Create PRM endpoint at /mcp/.well-known/oauth-protected-resource
+            # This points to the Authorization Server for OAuth discovery
+            # All OAuth paths should be under /mcp
+            # Reuse the same authorization server URL
+            root_metadata = ProtectedResourceMetadata(
+                resource=AnyHttpUrl(str(self.base_url).rstrip('/')),
+                authorization_servers=[authorization_server_url],
+                scopes_supported=self.required_scopes,
+                resource_name="BV-BRC MCP Server",
+                resource_documentation=None,
+            )
+            root_handler = ProtectedResourceMetadataHandler(root_metadata)
+            routes.append(
+                Route(
+                    "/mcp/.well-known/oauth-protected-resource",
+                    endpoint=cors_middleware(root_handler.handle, ["GET", "OPTIONS"]),
+                    methods=["GET", "OPTIONS"],
+                )
+            )
+        except Exception as e:
             # If URL validation fails, skip advertising metadata to avoid breaking the app
+            print(f"[AUTH] Failed to create PRM routes: {e}", file=sys.stderr)
             pass
         return routes
 
@@ -207,9 +235,9 @@ def openid_configuration(request, openid_config_url: str) -> JSONResponse:
     print("Request path:", request.url.path)
     config = {
             "issuer": openid_config_url,
-            "authorization_endpoint": f"{openid_config_url}/oauth2/authorize",
-            "token_endpoint": f"{openid_config_url}/oauth2/token",
-            "registration_endpoint": f"{openid_config_url}/oauth2/register", # 1
+            "authorization_endpoint": f"{openid_config_url}/mcp/oauth2/authorize",
+            "token_endpoint": f"{openid_config_url}/mcp/oauth2/token",
+            "registration_endpoint": f"{openid_config_url}/mcp/oauth2/register", # 1
             "response_types_supported": ["code"],
             "grant_types_supported": ["authorization_code"],
             "token_endpoint_auth_methods_supported": ["none", "client_secret_post"],
@@ -524,7 +552,7 @@ async def oauth2_authorize(request, authentication_url: str):
             
             <div id="error-message" class="error"></div>
             
-            <form id="login-form" method="POST" action="/oauth2/login">
+            <form id="login-form" method="POST" action="/mcp/oauth2/login">
                 <input type="hidden" name="client_id" value="{client_id}">
                 <input type="hidden" name="redirect_uri" value="{redirect_uri}">
                 <input type="hidden" name="state" value="{state or ''}">
