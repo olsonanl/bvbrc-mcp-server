@@ -211,7 +211,7 @@ def register_service_tools(mcp: FastMCP, api: JsonRpcCaller, similar_genome_find
 # Metagenomics Services
 
     @mcp.tool(name="taxonomic_classification")
-    def submit_taxonomic_classification_app(token: Optional[str] = None, host_genome: str = "no_host", analysis_type: str = "16S", paired_end_libs: List[Dict] = None, single_end_libs: List[Dict] = None, srr_libs: List[Dict] = None, database: str = "SILVA", save_classified_sequences: bool = False, save_unclassified_sequences: bool = False, confidence_interval: float = 0.1, output_path: str = None, output_file: str = None) -> str:
+    def submit_taxonomic_classification_app(token: Optional[str] = None, host_genome: str = "no_host", analysis_type: str = "16S", paired_end_libs: List[Dict] = None, single_end_libs: List[Dict] = None, srr_libs: List = None, database: str = "SILVA", save_classified_sequences: bool = False, save_unclassified_sequences: bool = False, confidence_interval: float = 0.1, output_path: str = None, output_file: str = None) -> str:
         """
         This tool submits a taxonomic classification job against one or more metagenonic read libraries. It has the following parameters.
 
@@ -221,7 +221,7 @@ def register_service_tools(mcp: FastMCP, api: JsonRpcCaller, similar_genome_find
             analysis_type: Type of analysis ("16S" or "WGS", default: "16S")
             paired_end_libs: List of paired-end read libraries (each as a dict with 'file1' and 'file2' keys)
             single_end_libs: List of single-end read libraries (each as a dict with 'file' key)
-            srr_libs: List of SRR IDs (each as a dict with 'srr' key)
+            srr_libs: List of SRA run IDs (each as a dict with 'sra_accession' and 'sample_id' keys, both with the same value)
             database: Reference database for classification (default: "SILVA")
             save_classified_sequences: Whether to save classified sequences (default: False)
             save_unclassified_sequences: Whether to save unclassified sequences (default: False)
